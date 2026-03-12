@@ -7,22 +7,20 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: Request) {
   try {
-    const { price_cents, title } = await req.json();
+    const { items } = await req.json(); // Accept an array of items
+
+    const line_items = items.map((item: any) => ({
+      price_data: {
+        currency: 'usd',
+        product_data: { name: item.title },
+        unit_amount: item.price_cents,
+      },
+      quantity: item.quantity || 1,
+    }));
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: title,
-            },
-            unit_amount: price_cents,
-          },
-          quantity: 1,
-        },
-      ],
+      line_items,
       mode: 'payment',
       success_url: `${req.headers.get('origin')}/?success=true`,
       cancel_url: `${req.headers.get('origin')}/?canceled=true`,
