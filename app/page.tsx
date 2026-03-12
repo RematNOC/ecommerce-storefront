@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { ShoppingCart, Search, Menu, ArrowRight, Loader2, X, Trash2, Eye, ShieldCheck, Globe, Lock, Mail } from 'lucide-react';
+import { ShoppingCart, Search, Menu, Loader2, X, Trash2, Eye, ShieldCheck, Globe, Lock, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
@@ -10,6 +10,7 @@ const formatPrice = (cents: number) => {
 
 export default function Storefront() {
   const [products, setProducts] = useState<any[]>([]);
+  const [settings, setSettings] = useState({ hero_heading: 'PURE ARTIFACTS', hero_subheading: 'Archive 001', hero_image_url: '' });
   const [cart, setCart] = useState<any[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -17,23 +18,27 @@ export default function Storefront() {
   const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
 
   useEffect(() => {
-    async function fetchProducts() {
-      const { data } = await supabase.from('products').select('*').eq('is_active', true);
-      setProducts(data || []);
+    async function fetchData() {
+      // Fetch Products
+      const { data: pData } = await supabase.from('products').select('*').eq('is_active', true);
+      if (pData) setProducts(pData);
+      
+      // Fetch CMS Settings
+      const { data: sData } = await supabase.from('store_settings').select('*').eq('id', 1).single();
+      if (sData) setSettings(sData);
+
       setLoading(false);
     }
-    fetchProducts();
+    fetchData();
   }, []);
 
   const addToCart = (product: any) => {
     setCart(prev => [...prev, product]);
     setIsCartOpen(true);
-    setQuickViewProduct(null); // Close quick view if open
+    setQuickViewProduct(null);
   };
 
-  const removeFromCart = (index: number) => {
-    setCart(prev => prev.filter((_, i) => i !== index));
-  };
+  const removeFromCart = (index: number) => setCart(prev => prev.filter((_, i) => i !== index));
 
   const handleCheckout = async (itemsToBuy: any[]) => {
     setCheckoutLoading(true);
@@ -53,7 +58,7 @@ export default function Storefront() {
   return (
     <div className="min-h-screen bg-white text-black font-sans selection:bg-black selection:text-white overflow-x-hidden">
       
-      {/* 1. CART DRAWER (Existing) */}
+      {/* CART DRAWER */}
       <AnimatePresence>
         {isCartOpen && (
           <>
@@ -68,9 +73,12 @@ export default function Storefront() {
                   <p className="text-xs text-neutral-400 uppercase tracking-widest text-center mt-24">The collection is empty.</p>
                 ) : cart.map((item, i) => (
                   <div key={i} className="flex justify-between items-center border-b border-neutral-100 pb-4">
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-tight">{item.title}</h4>
-                      <p className="text-xs text-neutral-500 font-mono">{formatPrice(item.price_cents)}</p>
+                    <div className="flex items-center gap-4">
+                      {item.image_url && <img src={item.image_url} alt={item.title} className="w-12 h-12 object-cover" />}
+                      <div>
+                        <h4 className="text-xs font-bold uppercase tracking-tight">{item.title}</h4>
+                        <p className="text-xs text-neutral-500 font-mono">{formatPrice(item.price_cents)}</p>
+                      </div>
                     </div>
                     <Trash2 className="w-4 h-4 text-neutral-300 hover:text-black cursor-pointer" onClick={() => removeFromCart(i)} />
                   </div>
@@ -90,7 +98,7 @@ export default function Storefront() {
         )}
       </AnimatePresence>
 
-      {/* 2. QUICK VIEW MODAL (New Elite Feature) */}
+      {/* QUICK VIEW MODAL */}
       <AnimatePresence>
         {quickViewProduct && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6">
@@ -98,8 +106,12 @@ export default function Storefront() {
             <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.95 }} className="relative w-full max-w-4xl bg-white shadow-2xl overflow-hidden flex flex-col md:flex-row h-[80vh] md:h-[600px]">
               <button onClick={() => setQuickViewProduct(null)} className="absolute top-4 right-4 z-10 bg-white p-2 rounded-full shadow-md hover:bg-neutral-100 transition-colors"><X size={16} /></button>
               
-              <div className="w-full md:w-1/2 bg-neutral-100 h-1/2 md:h-full flex items-center justify-center relative">
-                <span className="text-[10px] tracking-[0.4em] text-neutral-400 uppercase font-bold">Artifact_Image</span>
+              <div className="w-full md:w-1/2 bg-neutral-100 h-1/2 md:h-full flex items-center justify-center relative overflow-hidden">
+                {quickViewProduct.image_url ? (
+                   <img src={quickViewProduct.image_url} alt={quickViewProduct.title} className="w-full h-full object-cover" />
+                ) : (
+                   <span className="text-[10px] tracking-[0.4em] text-neutral-400 uppercase font-bold">Artifact_Image</span>
+                )}
                 {quickViewProduct.sku && <span className="absolute bottom-4 left-4 text-[8px] tracking-[0.3em] uppercase text-neutral-400 bg-white px-2 py-1 shadow-sm">{quickViewProduct.sku}</span>}
               </div>
               
@@ -121,29 +133,33 @@ export default function Storefront() {
         )}
       </AnimatePresence>
 
-      <div className="bg-black text-white py-2 text-[10px] tracking-[0.3em] text-center uppercase">COMPLIMENTARY GLOBAL SHIPPING</div>
+      <div className="bg-black text-white py-2 text-[10px] tracking-[0.3em] text-center uppercase relative z-50">COMPLIMENTARY GLOBAL SHIPPING</div>
 
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-neutral-100 px-6 py-4 md:px-12 flex justify-between items-center">
+      <header className="absolute top-10 left-0 w-full z-40 bg-transparent px-6 py-4 md:px-12 flex justify-between items-center mix-blend-difference text-white">
         <Menu className="w-5 h-5 cursor-pointer hover:opacity-60 transition-opacity" />
         <h1 className="text-xl font-light tracking-[0.4em] uppercase cursor-pointer">PRESTIGE</h1>
         <div className="flex items-center gap-6">
           <Search className="w-5 h-5 cursor-pointer hover:opacity-60 transition-opacity" />
           <div className="relative cursor-pointer hover:opacity-60 transition-opacity" onClick={() => setIsCartOpen(true)}>
             <ShoppingCart className="w-5 h-5" />
-            {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] w-3 h-3 rounded-full flex items-center justify-center">{cart.length}</span>}
+            {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-white text-black text-[8px] w-3 h-3 rounded-full flex items-center justify-center font-bold">{cart.length}</span>}
           </div>
         </div>
       </header>
 
-      <section className="relative h-[70vh] bg-neutral-50 flex flex-col items-center justify-center text-center px-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-4xl">
-          <span className="text-[10px] tracking-[0.5em] uppercase text-neutral-400 mb-6 block">Archive 001</span>
-          <h2 className="text-5xl md:text-7xl font-light tracking-tight mb-10 leading-none uppercase">Pure Artifacts</h2>
-          <button className="border border-black px-10 py-4 text-[10px] tracking-[0.3em] uppercase hover:bg-black hover:text-white transition-all font-bold">Discover Collection</button>
+      {/* DYNAMIC CMS HERO SECTION */}
+      <section className="relative h-[80vh] bg-neutral-900 flex flex-col items-center justify-center text-center px-6 overflow-hidden">
+        {settings.hero_image_url && (
+          <img src={settings.hero_image_url} alt="Hero" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+        )}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-4xl relative z-10 text-white">
+          <span className="text-[10px] tracking-[0.5em] uppercase text-white/70 mb-6 block">{settings.hero_subheading}</span>
+          <h2 className="text-5xl md:text-8xl font-light tracking-tight mb-10 leading-none uppercase">{settings.hero_heading}</h2>
+          <button className="border border-white px-10 py-4 text-[10px] tracking-[0.3em] uppercase hover:bg-white hover:text-black transition-all font-bold backdrop-blur-sm">Discover Collection</button>
         </motion.div>
       </section>
 
-      {/* 3. TRUST BAR (New Elite Feature) */}
+      {/* TRUST BAR */}
       <section className="border-b border-neutral-100 bg-white">
         <div className="max-w-[1400px] mx-auto px-6 py-8 md:py-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-neutral-100">
           <div className="flex flex-col items-center justify-center pt-8 md:pt-0 space-y-3">
@@ -176,9 +192,15 @@ export default function Storefront() {
             {products.map((product) => (
               <div key={product.id} className="group flex flex-col">
                 <div className="aspect-[4/5] bg-neutral-100 mb-8 relative overflow-hidden flex items-center justify-center cursor-pointer" onClick={() => setQuickViewProduct(product)}>
-                  <span className="text-[8px] tracking-[0.4em] text-neutral-400 uppercase font-bold">Artifact_Image</span>
-                  {/* Quick View Hover State */}
-                  <div className="absolute inset-0 bg-white/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                  
+                  {/* REAL PRODUCT IMAGE RENDER */}
+                  {product.image_url ? (
+                    <img src={product.image_url} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  ) : (
+                    <span className="text-[8px] tracking-[0.4em] text-neutral-400 uppercase font-bold">Artifact_Image</span>
+                  )}
+                  
+                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
                     <div className="bg-black text-white px-6 py-3 flex items-center gap-2 text-[10px] tracking-widest uppercase font-bold transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                       <Eye size={14} /> Quick View
                     </div>
@@ -200,7 +222,7 @@ export default function Storefront() {
         )}
       </div>
 
-      {/* 4. NEWSLETTER CAPTURE (New Elite Feature) */}
+      {/* NEWSLETTER CAPTURE */}
       <section className="bg-neutral-50 py-32 border-t border-neutral-100">
         <div className="max-w-2xl mx-auto px-6 text-center space-y-8">
           <Mail className="w-8 h-8 mx-auto text-neutral-400" />
