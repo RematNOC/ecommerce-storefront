@@ -1,67 +1,62 @@
 "use client";
-
+import React from 'react';
+import { ShoppingCart, Plus, Layers, Zap, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, ArrowRight } from 'lucide-react';
 
-const MOCK_PRODUCTS = [
-  { id: '1', title: 'Cyberpunk Hoodie', price_cents: 8500, sku: 'CB-H-001', is_active: true },
-  { id: '2', title: 'Onyx Ring', price_cents: 12000, sku: 'ONX-R-001', is_active: true },
-  { id: '3', title: 'Neural Uplink V2', price_cents: 45000, sku: 'NU-V2-88', is_active: true },
-  { id: '4', title: 'Carbon Fiber Case', price_cents: 4500, sku: 'CF-C-12', is_active: true },
+const PRODUCTS = [
+  { id: 1, name: 'Cyberpunk Hoodie', price: 12000, category: 'Apparel' },
+  { id: 2, name: 'Onyx Ring', price: 45000, category: 'Jewelry' },
+  { id: 3, name: 'Neural Link v2', price: 250000, category: 'Hardware' },
+  { id: 4, name: 'Ghost Shell', price: 8500, category: 'Apparel' },
+  { id: 5, name: 'Void Fragrance', price: 18000, category: 'Scent' },
+  { id: 6, name: 'Carbon Desk', price: 320000, category: 'Furniture' },
 ];
+
+const formatPrice = (cents: number) => {
+  return (cents / 100).toLocaleString('en-US', {
+    style: 'currency', currency: 'USD',
+  });
+};
 
 export default function Storefront() {
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-[#000000] selection:bg-black selection:text-white font-sans">
-      <header className="border-b-2 border-black p-8 flex justify-between items-center">
-        <h1 className="text-3xl font-black tracking-tighter uppercase">MotherBrain <span className="text-black/30">Store</span></h1>
-        <button className="flex items-center gap-2 font-bold tracking-widest uppercase text-sm hover:opacity-50 transition-opacity">
-          <ShoppingBag size={18} /> Cart (0)
-        </button>
-      </header>
-
-      <section className="p-8 md:p-16 border-b-2 border-black">
-        <h2 className="text-6xl md:text-8xl font-black tracking-tighter uppercase max-w-4xl leading-none">
-          Brutalist <br/> Luxury.
-        </h2>
-        <p className="mt-6 text-xl font-medium tracking-tight max-w-xl text-black/70">
-          High-end technical apparel and hardware. Powered by a headless Next.js commerce engine.
-        </p>
-      </section>
-
-      <section className="p-8 md:p-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {MOCK_PRODUCTS.map((product, idx) => (
-            <motion.div 
-              key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className="group cursor-pointer flex flex-col"
-            >
-              <div className="aspect-[4/5] bg-black/5 border-2 border-black mb-4 relative overflow-hidden flex items-center justify-center group-hover:bg-black/10 transition-colors">
-                <span className="font-bold tracking-widest text-black/20 uppercase text-xs rotate-[-90deg]">Asset Missing</span>
-              </div>
-              
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h3 className="font-bold text-lg tracking-tight uppercase">{product.title}</h3>
-                  <p className="text-xs font-mono text-black/50 mt-1">{product.sku}</p>
-                </div>
-                <span className="font-black text-lg">${(product.price_cents / 100).toFixed(2)}</span>
-              </div>
-
-              <motion.button 
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full bg-black text-white py-4 font-bold uppercase tracking-widest text-xs flex justify-center items-center gap-2 hover:bg-black/80 transition-colors mt-auto"
-              >
-                Add to Cart <ArrowRight size={16} />
-              </motion.button>
-            </motion.div>
-          ))}
+    <main className="min-h-screen bg-[#FAFAFA] text-[#000000] p-8 md:p-16 lg:p-24 font-sans selection:bg-black selection:text-white">
+      <header className="flex justify-between items-baseline mb-32 border-b border-black pb-8">
+        <h1 className="text-6xl md:text-8xl font-black tracking-tighter uppercase leading-none">Agency<br />HQ</h1>
+        <div className="flex flex-col items-end">
+          <span className="text-xs font-bold tracking-[0.3em] uppercase mb-2">Cart (0)</span>
+          <ShoppingCart size={32} strokeWidth={2.5} />
         </div>
+      </header>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-black border border-black overflow-hidden">
+        {PRODUCTS.map((product) => (
+          <div key={product.id} className="bg-[#FAFAFA] p-8 group flex flex-col h-full hover:bg-white transition-colors">
+            <div className="aspect-[4/5] bg-white/5 border border-black/5 mb-12 relative overflow-hidden flex items-center justify-center">
+               <Layers size={64} className="opacity-10" />
+               <span className="absolute bottom-4 left-4 text-neutral-400 font-mono text-[10px] uppercase tracking-widest">Image_Placeholder</span>
+            </div>
+            <div className="flex-grow">
+              <span className="text-[10px] font-bold tracking-[0.4em] uppercase text-neutral-500 block mb-2">{product.category}</span>
+              <h2 className="text-4xl font-bold tracking-tighter leading-tight mb-4 uppercase">{product.name}</h2>
+              <p className="text-2xl font-mono mb-8">{formatPrice(product.price)}</p>
+            </div>
+            <motion.button whileHover={{ scale: 0.98 }} whileTap={{ scale: 0.95 }} className="w-full bg-black text-white py-6 text-sm font-bold uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-neutral-900 transition-all">
+              Add to Collection <Plus size={20} />
+            </motion.button>
+          </div>
+        ))}
+      </div>
+      <section className="mt-48 grid grid-cols-1 md:grid-cols-3 gap-16 border-t border-black pt-24">
+        <div className="space-y-6"><Zap size={32} /><h3 className="text-2xl font-black uppercase tracking-tighter">Speed</h3><p className="text-neutral-600 leading-relaxed font-medium">Instant acquisition via secure neural handshake.</p></div>
+        <div className="space-y-6"><Shield size={32} /><h3 className="text-2xl font-black uppercase tracking-tighter">Security</h3><p className="text-neutral-600 leading-relaxed font-medium">Quantum-encrypted transactions for the digital age.</p></div>
+        <div className="space-y-6"><Layers size={32} /><h3 className="text-2xl font-black uppercase tracking-tighter">Curation</h3><p className="text-neutral-600 leading-relaxed font-medium">Every artifact selected for its brutalist integrity.</p></div>
       </section>
-    </div>
+      <footer className="mt-64 border-t border-black pt-16 pb-12 flex flex-col md:flex-row justify-between items-start gap-16">
+        <div className="max-w-md"><p className="text-2xl font-medium leading-relaxed tracking-tight">Curated objects for the digital vanguard. Designed with absolute precision and zero compromise.</p></div>
+        <div className="grid grid-cols-2 gap-x-24 gap-y-4 text-xs font-bold uppercase tracking-widest">
+          <a href="#" className="hover:line-through">Shipping</a><a href="#" className="hover:line-through">Archive</a><a href="#" className="hover:line-through">Terms</a><a href="#" className="hover:line-through">Privacy</a>
+        </div>
+      </footer>
+    </main>
   );
 }
